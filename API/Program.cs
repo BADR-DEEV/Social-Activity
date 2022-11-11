@@ -26,6 +26,7 @@ namespace API
 
             try
             {
+                //GetRequiredService takes type of dbContext
                 var context = services.GetRequiredService<DataContext>();
 
                 //will create the database if it doesnt already exist

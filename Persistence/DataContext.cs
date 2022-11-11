@@ -16,6 +16,6 @@ namespace Persistence
         //DbSet<T> will create a collectoin 
         //The name of our table
         public DbSet<Activity> Activities { get; set; }
-        
+
     }
 }
