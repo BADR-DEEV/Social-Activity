@@ -1,7 +1,6 @@
 import { action, makeAutoObservable, makeObservable, observable, runInAction } from "mobx";
 import agent from "../api/agent";
 import { Activity } from "../models/activity";
-import { v4 as uuid } from 'uuid';
 
 export default class activityStore {
     activityRedistry = new Map<String, Activity>()
@@ -17,19 +16,18 @@ export default class activityStore {
     }
 
     get activitiesByDate() {
-        return Array.from(this.activityRedistry.values()).sort((a, b)=> 
-        Date.parse(a.date) - Date.parse(b.date))
+        return Array.from(this.activityRedistry.values()).sort((a, b) =>
+            Date.parse(a.date) - Date.parse(b.date))
     }
 
     loadActivities = async () => {
+        this.setLoadingInital(true)
 
-        try { 
-
+        try {
             const activities = await agent.Activities.list();
 
             activities.forEach(activity => {
-                activity.date = activity.date.split('T')[0]
-                this.activityRedistry.set(activity.id, activity);
+                this.setActivity(activity)
             })
 
             this.setLoadingInital(false);
@@ -39,36 +37,54 @@ export default class activityStore {
             this.setLoadingInital(false);
         }
     }
+    loadActivity = async (id: string) => {
+
+        let activity = this.getActivity(id);
+        if (activity) {
+            this.selectedActivity = activity;
+            return activity;
+        } else {
+            this.loadingInitial = true;
+            try {
+                activity = await agent.Activities.details(id);
+                this.setActivity(activity);
+
+                runInAction(() => {
+                    this.selectedActivity = activity;
+                })
+
+                this.setLoadingInital(false);
+                return activity;
+
+            } catch (e) {
+                console.log(e)
+                this.setLoadingInital(false);
+
+            }
+        }
+    }
+
+
+    private getActivity = (id: string) => {
+        return this.activityRedistry.get(id);
+
+    }
+
+    private setActivity = (activity: Activity) => {
+        activity.date = activity.date.split('T')[0]
+        this.activityRedistry.set(activity.id, activity);
+
+    }
+
 
     setLoadingInital = (state: boolean) => {
         this.loadingInitial = state;
 
     }
 
-    selectActivity = (id: string) => {
-        this.selectedActivity = this.activityRedistry.get(id);
-
-
-    }
-
-    cancelSelectedActivity = () => {
-        this.selectedActivity = undefined;
-    }
-
-    openForm = (id?: string) => {
-        id ? this.selectActivity(id) : this.cancelSelectedActivity();
-        this.editMode = true;
-
-
-    }
-    closeForm = () => {
-        this.editMode = false;
-    }
 
     createActivity = async (activity: Activity) => {
         this.loading = true;
-        activity.id = uuid();
-
         try {
             await agent.Activities.create(activity);
             runInAction(() => {
@@ -119,11 +135,9 @@ export default class activityStore {
             await agent.Activities.delete(id)
             runInAction(() => {
                 this.activityRedistry.delete(id);
-                if (this.selectedActivity?.id === id) this.cancelSelectedActivity();
                 this.loading = false;
 
             })
-
 
         } catch (e) {
             console.log(e)
