@@ -7,6 +7,7 @@ import { Route, useLocation } from 'react-router-dom';
 import HomePage from '../../features/home/HomePage';
 import ActivityForm from '../../features/activities/form/ActivityForm';
 import ActivityDetail from '../../features/activities/details/ActivityDetail';
+import './styles.css'
 
 
 

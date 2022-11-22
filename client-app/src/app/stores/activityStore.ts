@@ -1,4 +1,4 @@
-import { action, makeAutoObservable, makeObservable, observable, runInAction } from "mobx";
+import {  makeAutoObservable, runInAction } from "mobx";
 import agent from "../api/agent";
 import { Activity } from "../models/activity";
 
@@ -19,6 +19,28 @@ export default class activityStore {
         return Array.from(this.activityRedistry.values()).sort((a, b) =>
             Date.parse(a.date) - Date.parse(b.date))
     }
+
+
+    get grupedActivities() {
+
+        // const obj = { foo: 'bar', baz: 42 };
+        // console.log(Object.entries(obj)); 
+        // [ ['foo', 'bar'], ['baz', 42] ]
+
+        return Object.entries(
+            //reduce takes two params the first is an array the second is an indvisual item of the array
+            this.activitiesByDate.reduce((activities, activity) => {
+                //this represent our key for each object 
+                const date = activity.date;
+                //we are checking if there is a match , 
+                // activities are constant array the date is not we will loop through each date in the const array to find a match
+                activities[date] = activities[date] ? [...activities[date], activity] : [activity];
+                return activities;
+                //the reducer takes an inital value
+            }, {} as { [key: string]: Activity[] })
+        )
+    }
+
 
     loadActivities = async () => {
         this.setLoadingInital(true)

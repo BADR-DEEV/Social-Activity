@@ -5,7 +5,7 @@ interface Store {
     activityStore : ActivityStore
 }
 export const store : Store = {
-    activityStore : new ActivityStore
+    activityStore : new ActivityStore()
 }
 
 export const StoreContext = createContext(store);
