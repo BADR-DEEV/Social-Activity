@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Application.Core;
 using Domain;
+using FluentValidation;
 using MediatR;
 using Persistence;
 
@@ -10,27 +12,42 @@ namespace Application.Activities
 {
     public class Create
     {
-        public class Command : IRequest
+        public class Command : IRequest<Result<Unit>>
         {
             public Activity Activity { get; set; }
         }
-        
-        public class Handler : IRequestHandler<Command>
+
+        public class CommandValidator : AbstractValidator<Command>
         {
-        private readonly DataContext _context;
+            public CommandValidator()
+            {
+                //SetValidator is used so we could reuse our validator (Read the docs)
+                RuleFor(x => x.Activity).SetValidator(new ActivitiyValidator());
+            }
+        }
+
+        public class Handler : IRequestHandler<Command, Result<Unit>>
+        {
+            private readonly DataContext _context;
             public Handler(DataContext context)
             {
-            this._context = context;
+                this._context = context;
             }
 
-            public async Task<Unit> Handle(Command request, CancellationToken cancellationToken)
+            public async Task<Result<Unit>> Handle(Command request, CancellationToken cancellationToken)
             {
                 //we didnt do AddAsync because AddAsync is used when you want to add to a dataBase here we are just adding in memory
                 _context.Activities.Add(request.Activity);
 
-                await _context.SaveChangesAsync();
+                //the saveChangesAsync return an int (the number of entries written in the database)
 
-                return Unit.Value;
+                var result = await _context.SaveChangesAsync() > 0;
+
+                if (!result)
+                    return Result<Unit>.Faliure("Failed to create activity");
+
+                return Result<Unit>.Success(Unit.Value);
+
 
 
             }
