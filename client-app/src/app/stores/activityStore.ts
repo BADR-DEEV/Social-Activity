@@ -1,4 +1,5 @@
-import {  makeAutoObservable, runInAction } from "mobx";
+import { format } from "date-fns";
+import { makeAutoObservable, runInAction } from "mobx";
 import agent from "../api/agent";
 import { Activity } from "../models/activity";
 
@@ -7,7 +8,7 @@ export default class activityStore {
     selectedActivity: Activity | undefined = undefined;
     editMode = false;
     loading = false;
-    loadingInitial = true;
+    loadingInitial = false;
 
 
     constructor() {
@@ -17,7 +18,7 @@ export default class activityStore {
 
     get activitiesByDate() {
         return Array.from(this.activityRedistry.values()).sort((a, b) =>
-            Date.parse(a.date) - Date.parse(b.date))
+            a.date!.getTime() - b.date!.getTime())
     }
 
 
@@ -31,7 +32,7 @@ export default class activityStore {
             //reduce takes two params the first is an array the second is an indvisual item of the array
             this.activitiesByDate.reduce((activities, activity) => {
                 //this represent our key for each object 
-                const date = activity.date;
+                const date = format(activity.date!, 'dd MMM yyyy')
                 //we are checking if there is a match , 
                 // activities are constant array the date is not we will loop through each date in the const array to find a match
                 activities[date] = activities[date] ? [...activities[date], activity] : [activity];
@@ -93,7 +94,8 @@ export default class activityStore {
     }
 
     private setActivity = (activity: Activity) => {
-        activity.date = activity.date.split('T')[0]
+        // activity.date = activity.date.split('T')[0]
+        activity.date = new Date(activity.date!)
         this.activityRedistry.set(activity.id, activity);
 
     }
@@ -124,9 +126,6 @@ export default class activityStore {
 
             })
         }
-
-
-
     }
 
     UpdateActivity = async (activity: Activity) => {
